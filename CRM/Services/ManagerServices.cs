@@ -1,8 +1,8 @@
-﻿using CRM.DTO;
-using CRM.Enums;
-using CRM.Models;
+﻿using DTO;
+using Enums;
+using Models;
 
-namespace CRM.Services
+namespace Services
 {
     public sealed class ManagerServices
     {
@@ -12,13 +12,12 @@ namespace CRM.Services
             RequestsLoanUser = requestsLoanUser;
         }
 
-
         public void ChoiceLoanRequest(int idxUserLoan, string choice)
         {
             if (choice == "Accepted")
-                RequestsLoanUser[idxUserLoan].StatusDuty = StatusUser.Accepted;
+                RequestsLoanUser[idxUserLoan].StatusDuty = StatusLoan.Accepted;
             else if(choice == "Refuse")
-                RequestsLoanUser[idxUserLoan].StatusDuty = StatusUser.Refuse;
+                RequestsLoanUser[idxUserLoan].StatusDuty = StatusLoan.Refuse;
         }
     }
 }

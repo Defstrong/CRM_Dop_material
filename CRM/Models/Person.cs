@@ -1,9 +1,9 @@
-﻿using CRM.DTO;
-using CRM.Enums;
+﻿using DTO;  
+using Enums;
 
-namespace CRM.Models
+namespace Models
 {
-    public class Person
+    public sealed class Person
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }

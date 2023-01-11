@@ -1,7 +1,8 @@
-﻿using CRM.DTO;
-using CRM.Models;
-using CRM.Services;
-using CRM.Enums;
+﻿using DTO;
+using Models;
+using Services;
+using Enums;
+using AbstractClasses;
 
 var _personsList = new List<Person>();
 var _personsRequestsList = new List<Loan>();
@@ -11,17 +12,28 @@ var _login = new Login(_personsList);
 var _registration = new UserRegistration(_personsList);
 var _createAdmin = new AdminRegistration(_personsList);
 var _createModerator = new ModeratorRegistration(_personsList);
+bool _sendMassageFromManagerForOverdueRequest = false;
 
-var _userServices = new UserServices(_personsList, _personsRequestsList);
+var _editUser = new DtoEditUser();
+
+var _userServices = new UserServices(_personsList);
 var _adminServices = new AdminServices(_personsList,_personsRequestsList, _massages);
-var _moderatorServices = new ModeratorServices(_personsList,_personsRequestsList, _massages);
+var _moderatorServices = new ModeratorServices(_personsList);
 var _managerServices = new ManagerServices(_personsRequestsList);
 var _allStatistic = new Statistic();
 
-MassageService _managerMassage = new ManagerMassage(_massages, _personsList, _personsRequestsList);
-MassageService _userMassage = new UserMassage(_massages, _personsList, _personsRequestsList);
-MassageService _adminMassage = new AdminMassage(_massages, _personsList, _personsRequestsList);
+var _managerMassage = new ManagerMassage(_massages, _personsList, _personsRequestsList);
+var _userMassage = new UserMassage(_massages, _personsList, _personsRequestsList);
+var _adminMassage = new AdminMassage(_massages, _personsList, _personsRequestsList);
 int countAcceptedRequestRegistration = 0, countRefuseRequestRegistration = 0;
+
+var _adminLoanServices = new AdminLoanServices(_personsList, _personsRequestsList);
+var _userLoanServices = new UserLoanServices(_personsList, _personsRequestsList);
+
+var _errorMassages = new ErorMassageServices(_personsList);
+
+
+string helpStr = string.Empty;
 
 _personsList.Add(new Person
 {
@@ -91,7 +103,9 @@ while(i++ < 100)
         Guid idPerson = _login.LoginPerson(dto);
         Command(ref inputCommand);
         if (dto.Role == Roles.User)
+        {
             UserAction(inputCommand, idPerson);
+        }
         else if (dto.Role == Roles.Admin)
             AdminAction(inputCommand, idPerson);
         else if (dto.Role == Roles.Moderator)
@@ -105,12 +119,14 @@ while(i++ < 100)
 void UserAction(string commandUser, Guid userId)
 {
     int idx = FindIndex(userId);
-    _managerMassage.OverdueRequest();
+    if(!_sendMassageFromManagerForOverdueRequest)
+        _managerMassage.OverdueRequest(ref _sendMassageFromManagerForOverdueRequest);
     dto.Id = userId;
+
     if (commandUser == "Get loan")
     {
         AmounMoney(); Payday();
-        _userServices.Loan(dto, idx);
+        _userLoanServices.Loan(dto, idx);
     }
     else if (commandUser == "Status dutys")
         StatusDuty(userId);
@@ -121,7 +137,7 @@ void UserAction(string commandUser, Guid userId)
     else if (commandUser == "Delete profile")
         _userServices.DeleteProfile(userId);
     else if (commandUser == "Edit profile")
-        EditUser(userId);
+        EditProfile(userId);
     else if (commandUser == "Send massage")
         SendMassage(_userMassage, idx);
     else if (commandUser == "Debt off")
@@ -144,7 +160,9 @@ void AdminAction(string commandAdmin, Guid adminId)
     else if (commandAdmin == "Send massage")
         SendMassage(_adminMassage, idx);
     else if (commandAdmin == "My massages")
+    {
         MyMassagesAdmin(adminId);
+    }
     else if (commandAdmin == "Edit person")
         EditPerson();
     else if (commandAdmin == "Delete person")
@@ -157,26 +175,19 @@ void AdminAction(string commandAdmin, Guid adminId)
         PayOffUserDebts();
 }
 
-
 void PayOffUserDebts()
 {
     ShowAllIdUserRequestLoanForAdmin();
     Guid idTransactionUser = EnterId();
 
-    int idxUserTransaction = FindIndexUserTransaction(idTransactionUser);
-    _adminServices.PayOffUserDebts(idxUserTransaction);
-}
-int FindIndexUserTransaction(Guid id)
-{
-    int idx = _personsRequestsList.FindIndex(x => x.Id.Equals(id));
-    return idx;
+    _adminLoanServices.PayTheDebtOff(idTransactionUser);
 }
 
 void ShowAllIdUserRequestLoanForAdmin()
 {
     foreach (var ii in _personsRequestsList)
     {
-        if (ii.StatusDuty == StatusUser.Accepted)
+        if (ii.StatusDuty == StatusLoan.Accepted)
         {
             Console.WriteLine("\n" + ii.Id);
             write.Status(ii.StatusDuty);
@@ -192,7 +203,7 @@ void CreateLoanForUser()
     int idxUser = FindIndex(idUser);
     dto.Id = _personsList[idxUser].Id;
     AmounMoney(); Payday();
-    _adminServices.LoanForUser(dto, idxUser);
+    _adminLoanServices.Loan(dto, idxUser);
 }
 
 void EditPerson()
@@ -200,28 +211,28 @@ void EditPerson()
     ShowAllPersonId();
     int i = 0;
     Guid idPerson = EnterId();
-    InputUserDto EditUser = new InputUserDto();
+    DtoEditUser dtoEditUser = new DtoEditUser() { Id = idPerson };
     while (i++ <= 6)
     {
         string atribut = string.Empty, change = string.Empty;
-        atribut = EnterAnother(ref atribut, "change");
-        change = EnterAnother(ref change, "changer");
+        atribut = EnterAnother(atribut, "change");
+        change = EnterAnother(change, "changer");
         if (atribut == "First name")
-            EditUser.FirstName = change;
+            dtoEditUser.FirstName = change;
         else if (atribut == "Last name")
-            EditUser.LastName = change;
+            dtoEditUser.LastName = change;
         else if (atribut == "Patronymic")
-            EditUser.Patronymic = change;
+            dtoEditUser.Patronymic = change;
         else if (atribut == "Age")
-            EditUser.Age = int.Parse(change);
+            dtoEditUser.Age = int.Parse(change);
         else if (atribut == "Login")
-            EditUser.Login = change;
+            dtoEditUser.Login = change;
         else if (atribut == "Password")
-            EditUser.Password = change;
+            dtoEditUser.Password = change;
         else if (atribut == string.Empty)
             break;
     }
-    _adminServices.EditPerson(EditUser, idPerson);
+    _adminServices.EditPerson(dtoEditUser);
 }
 
 void BlockPerson()
@@ -257,8 +268,6 @@ void ManagerAction(string commandManager, Guid managerId)
         SendMassage(_managerMassage, idx);
     else if (commandManager == "My massages")
         MyMassagesManager(managerId);
-
-
 }
 
 void LoanRequestsManager()
@@ -283,27 +292,32 @@ void LoanRequestsManager()
 void SendMassage(MassageService personMassage, int idx)
 {
     string DefinitionPerson = _personsList[idx].Role.ToString();
+
     personMassage.SendMassage(InputDataSendMassage(dto, idx));
 }
 
 InputUserDto InputDataSendMassage(InputUserDto dataSendMassage, int indexUser)
 {
-    string AdminOrManager;
+    string AdminOrManager = string.Empty;
     string DefinitionPerson = _personsList[indexUser].Role.ToString();
+    string inputText = string.Empty;
+    string WriteText;
     if(DefinitionPerson == "User")
     {
-        Console.Write("Who do you want to send a message to Admin or Manager: ");
-        AdminOrManager = Console.ReadLine();
+        string[] ManagerAdmin = { "Manager", "Admin" };
+        WriteText = "Who do you want to send a message to Admin or Manager: ";
+        whileMethodWrongText(WriteText, ref AdminOrManager, ManagerAdmin);
         if (AdminOrManager == "Admin")
             dataSendMassage.Role = Roles.Admin;
         else if (AdminOrManager == "Manager")
             dataSendMassage.Role = Roles.Manager;
-        else
-            throw new Exception("Eror. Person is not found");
-        Console.Write("Please enter theme massage: ");
-        dataSendMassage.Theme = Console.ReadLine();
-        Console.Write("Please enter text massage: ");
-        dataSendMassage.Text = Console.ReadLine();
+        WriteText = "Please enter theme massage: ";
+        whileMethodNullOrEmpty(WriteText, ref inputText);
+        dataSendMassage.Theme = inputText;
+        WriteText = "Please enter text massage: ";
+        whileMethodNullOrEmpty(WriteText, ref inputText);
+        dataSendMassage.Text = inputText;
+
         dataSendMassage.Id = _personsList[indexUser].Id;
         dataSendMassage.FirstName = _personsList[indexUser].FirstName;
     }
@@ -322,11 +336,54 @@ InputUserDto InputDataSendMassage(InputUserDto dataSendMassage, int indexUser)
     return dataSendMassage;
 }
 
+
+
+void Registration()
+{
+    string atributRegistration = string.Empty;
+    FirstName(ref dto);
+    LastName(ref dto);
+    Patronymic(ref dto); 
+    DateOfBirth(ref dto);
+    Login(ref dto); 
+    Password(ref dto);
+    _registration.RegistrationPerson(dto);
+}
+
+
+void whileMethodWrongText(string writeText, ref string input, string[] arrData)
+{
+    input = string.Empty;
+    bool breakWhile = false;
+    while (breakWhile == false)
+    {
+        Console.Write(writeText);
+        input = Console.ReadLine();
+        var eror = _errorMassages.WrongText(arrData, input);
+        Console.WriteLine(eror.TextError);
+        breakWhile = eror.IsSuccessfully;
+    }
+}
+void whileMethodNullOrEmpty(string writeText, ref string input)
+{
+    input = string.Empty;
+    int i = 0;
+    bool breakWhile = false;
+    while(breakWhile == false)
+    {
+        Console.Write(writeText);
+        input = Console.ReadLine();
+        var eror = _errorMassages.IsNullOrEmptyMassage(input);
+        Console.WriteLine(eror.TextError);
+        breakWhile = eror.IsSuccessfully;
+    }
+}
+
 // User Methods
 void PayTheDebtOff(Guid userId)
 {
     ShowAllIdUserRequestLoan(userId);
-    _userServices.PayTheDebtOff(EnterIdRequestForTheDebtOff());
+    _userLoanServices.PayTheDebtOff(EnterIdRequestForTheDebtOff());
 }
 Guid EnterIdRequestForTheDebtOff()
 {
@@ -339,7 +396,7 @@ void ShowAllIdUserRequestLoan(Guid userId)
 {
     foreach (var ii in _personsRequestsList)
     {
-        if (ii.IdSender == userId && ii.StatusDuty == StatusUser.Accepted)
+        if (ii.IdSender == userId && ii.StatusDuty == StatusLoan.Accepted)
         {
             Console.WriteLine(ii.Id);
             write.Status(ii.StatusDuty);
@@ -353,7 +410,7 @@ void StatusDuty(Guid userId)
 
     foreach (var ii in _personsRequestsList)
     {
-        if (ii.IdSender == userId && ii.StatusDuty != StatusUser.Pending)
+        if (ii.IdSender == userId)
         {
             write.Status(ii.StatusDuty);
             write.WriteDutys(ii.ToString());
@@ -403,31 +460,31 @@ void ShowAllIdMassagesForUser(Guid id)
             Console.WriteLine(ii.Id);
     }
 }
-void EditUser(Guid id)
+void EditProfile(Guid id)
 {
     int i = 0;
-    InputUserDto EditUser = new InputUserDto();
+    DtoEditUser dtoEditProfile = new DtoEditUser() { Id = id};
     while (i++ <= 6)
     {
         string atribut = string.Empty, change = string.Empty;
-        atribut = EnterAnother(ref atribut, "change");
-        change = EnterAnother(ref change, "changer");
+        atribut = EnterAnother(atribut, "change");
+        change = EnterAnother(change, "changer");
         if (atribut == "First name")
-            EditUser.FirstName = change;
+            dtoEditProfile.FirstName = change;
         else if (atribut == "Last name")
-            EditUser.LastName = change;
+            dtoEditProfile.LastName = change;
         else if (atribut == "Patronymic")
-            EditUser.Patronymic = change;
+            dtoEditProfile.Patronymic = change;
         else if (atribut == "Age")
-            EditUser.Age = int.Parse(change);
+            dtoEditProfile.Age = int.Parse(change);
         else if (atribut == "Login")
-            EditUser.Login = change;
+            dtoEditProfile.Login = change;
         else if (atribut == "Password")
-            EditUser.Password = change;
+            dtoEditProfile.Password = change;
         else if (atribut == string.Empty)
             break;
     }
-    _userServices.EditProfile(EditUser, id);
+    _userServices.EditProfile(dtoEditProfile);
 }
 //
 
@@ -476,7 +533,7 @@ void ShowUsersLoan()
 {
     foreach (var ii in _personsRequestsList)
     {
-        if (ii.StatusDuty == StatusUser.Pending)
+        if (ii.StatusDuty == StatusLoan.Pending)
             Console.WriteLine(ii.ToString());
     }
 }
@@ -489,7 +546,7 @@ void ModeratorAction(string commandAdmin)
 
     if(commandAdmin == "Requests")
     {
-        ShowAllUsersId<Person>(_personsList, StatusUser.Pending);
+        ShowAllUsersId(_personsList, StatusUser.Pending);
         ShowUsers(StatusUser.Pending);
         string Choice = string.Empty; Guid Id = Guid.Empty;
         write.Choice(ref Id, ref Choice);
@@ -507,7 +564,7 @@ void ModeratorAction(string commandAdmin)
     }
 }
 //Moderator Methods
-void ShowAllUsersId<T>(List<T> personsId, StatusUser status) where T : Person
+void ShowAllUsersId(List<Person> personsId, StatusUser status)
 {
     bool presence = false;
     for (int i = 0; i < personsId.Count; i++)
@@ -530,7 +587,7 @@ void MyMassagesAdmin(Guid id)
 {
     ShowAllIdMassagesForAdmin(id);
     bool b = false;
-    int idx = _massages.FindIndex(x => x.IdSender.Equals(id));
+    Console.WriteLine(_massages[0].Role);
     foreach (var ii in _massages)
     {
         if (ii.Role == Roles.Admin)
@@ -620,7 +677,7 @@ void ShowAllUserIdLoan()
     bool presence = false;
     for (int i = 0; i < _personsRequestsList.Count; i++)
     {
-        if (_personsRequestsList[i].StatusDuty == StatusUser.Pending)
+        if (_personsRequestsList[i].StatusDuty == StatusLoan.Pending)
         {
             Console.WriteLine($"Name: {_personsRequestsList[i].Name} - Id: {_personsRequestsList[i].Id}");
             presence = true;
@@ -628,13 +685,6 @@ void ShowAllUserIdLoan()
     }
     if (!presence)
         throw new Exception("You don't have requests");
-}
-void Registration()
-{
-    FirstName(ref dto); LastName(ref dto);
-    Patronymic(ref dto); DateOfBirth(ref dto);
-    Login(ref dto); Password(ref dto);
-    _registration.RegistrationPerson(dto);
 }
 void CreateAdmin()
 {
@@ -652,33 +702,34 @@ void CreateModerator()
 }
 void FirstName(ref InputUserDto inputUserDtoFirstName)
 {
-    Console.Write("First name: ");
-    inputUserDtoFirstName.FirstName = Console.ReadLine();
+    whileMethodNullOrEmpty("First name: ", ref helpStr);
+    inputUserDtoFirstName.FirstName = helpStr;
+
 }
 void LastName(ref InputUserDto inputUserDtoLastName)
 {
-    Console.Write("Last name: ");
-    inputUserDtoLastName.LastName = Console.ReadLine();
+    whileMethodNullOrEmpty("Last name: ", ref helpStr);
+    inputUserDtoLastName.LastName = helpStr;
 }
 void Patronymic(ref InputUserDto inputUserDtoPatronymic)
 {
-    Console.Write("Patronymic: ");
-    inputUserDtoPatronymic.Patronymic = Console.ReadLine();
+    whileMethodNullOrEmpty("Patronymic: ", ref helpStr);
+    inputUserDtoPatronymic.Patronymic = helpStr;
 }
 void DateOfBirth(ref InputUserDto inputUserDtoDateOfBirth)
 {
-    Console.Write("Date of birth: ");
-    inputUserDtoDateOfBirth.DateOfBirth = DateTime.Parse(Console.ReadLine());
+    whileMethodNullOrEmpty("Date of birth: ", ref helpStr);
+    inputUserDtoDateOfBirth.DateOfBirth = DateTime.Parse(helpStr);
 }
 void Login(ref InputUserDto inputUserDtoLogin)
 {
-    Console.Write("Login: ");
-    inputUserDtoLogin.Login = Console.ReadLine();
+    whileMethodNullOrEmpty("Login: ", ref helpStr);
+    inputUserDtoLogin.Login = helpStr;
 }
 void Password(ref InputUserDto inputUserDtoPassword)
 {
-    Console.Write("Password: ");
-    inputUserDtoPassword.Password = Console.ReadLine();
+    whileMethodNullOrEmpty("Password: ", ref helpStr);
+    inputUserDtoPassword.Password = helpStr;
 }
 void AmounMoney()
 {
@@ -701,7 +752,7 @@ int FindIndex(Guid id)
     int idx = _personsList.FindIndex(x => x.Id.Equals(id));
     return idx;
 }
-string EnterAnother(ref string another, string change)
+string EnterAnother(string another, string change)
 {
     Console.Write($"Enter {change}: ");
     another = Console.ReadLine();
@@ -710,9 +761,9 @@ string EnterAnother(ref string another, string change)
 }
 void ShowUsersIdTransaction()
 {
-    foreach(var ii in _personsRequestsList)
+    foreach (var ii in _personsRequestsList)
     {
-        if(ii.StatusDuty == StatusUser.Pending)
+        if(ii.StatusDuty == StatusLoan.Pending)
             Console.WriteLine($"Name: {ii.Name} - Id Transaction: {ii.Id}");
     }
 }

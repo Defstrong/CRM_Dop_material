@@ -1,8 +1,8 @@
-﻿using CRM.DTO;
-using CRM.Enums;
-using CRM.Models;
+﻿using DTO;
+using Enums;
+using Models;
 
-namespace CRM.Services
+namespace Services
 {
     public class Login
     {

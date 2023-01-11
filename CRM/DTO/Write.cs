@@ -1,7 +1,7 @@
-﻿using CRM.Enums;
-using CRM.Models;
+﻿using Enums;
+using Models;
 
-namespace CRM.DTO
+namespace DTO
 {
     class Write
     {
@@ -30,7 +30,7 @@ namespace CRM.DTO
             Console.Write("Enter user name: ");
             Name = Console.ReadLine();
         }
-        public void Status(StatusUser status) =>
+        public void Status(StatusLoan status) =>
             Console.WriteLine("\n\t"+status);
         public void ChoiceCreator(ref Guid Id)
         {

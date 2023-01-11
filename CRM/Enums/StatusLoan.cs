@@ -1,11 +1,11 @@
 ﻿
 namespace Enums
 {
-    public enum StatusUser
+    public enum StatusLoan
     {
         Accepted,
         Refuse,
         Pending,
-        Block
+        Paid
     }
 }

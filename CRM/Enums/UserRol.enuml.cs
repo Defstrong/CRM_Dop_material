@@ -1,4 +1,4 @@
-﻿namespace CRM.Enums
+﻿namespace Enums
 {
     public enum Roles
     {

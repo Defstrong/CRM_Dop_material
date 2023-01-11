@@ -1,8 +1,8 @@
-﻿using CRM.Enums;
+﻿using Enums;
 
-namespace CRM.Models
+namespace Models
 {
-    public class Massage
+    public sealed class Massage
     {
         public Guid Id { get; set; }
         public Guid IdSender { get; set; }

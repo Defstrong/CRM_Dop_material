@@ -1,15 +1,15 @@
-﻿using CRM.Enums;
+﻿using Enums;
 
-namespace CRM.Models
+namespace Models
 {
-    public class Loan
+    public sealed class Loan
     {
         public Guid Id { get; set; }
         public Guid IdSender { get; set; }
         public int CountMoney { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }
-        public StatusUser StatusDuty { get; set; } = StatusUser.Pending;
+        public StatusLoan StatusDuty { get; set; } = StatusLoan.Pending;
         public DateTime Payday { get; set; }
         public override string ToString()
         {

@@ -2,7 +2,7 @@
 
 namespace DTO
 {
-    public class InputUserDto
+    public class DtoEditUser
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }
@@ -12,11 +12,5 @@ namespace DTO
         public DateTime DateOfBirth { get; set; }
         public string Login { get; set; }
         public string Password { get; set; }
-        public int AmountMoney { get; set; }
-        public DateTime Payday { get; set; }
-        public string Massage { get; set; }
-        public Roles Role { get; set; }
-        public string Text { get; set; }
-        public string Theme { get; set; }
     }
 }

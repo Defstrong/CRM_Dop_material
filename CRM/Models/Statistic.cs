@@ -1,5 +1,5 @@
 ﻿
-namespace CRM.Models
+namespace Models
 {
     public sealed class Statistic
     {

@@ -1,27 +1,10 @@
-﻿using CRM.DTO;
-using CRM.Enums;
-using CRM.Models;
+﻿using AbstractClasses;
+using DTO;
+using Enums;
+using Models;
 
-namespace CRM.Services
+namespace Services
 {
-    abstract class MassageService
-    {
-        public List<Massage> Massages { get; set; }
-        public List<Person> Persons;
-        public List<Loan> RequestsLoanUser;
-
-        public MassageService(List<Massage> massages, List<Person> persons, List<Loan> requestsLoanUser)
-        {
-            Massages = massages;
-            Persons = persons;
-            RequestsLoanUser = requestsLoanUser;
-        }
-
-        abstract public void SendMassage(InputUserDto massages);
-
-        public virtual void OverdueRequest() { }
-    }
-
     class UserMassage : MassageService
     {
         public UserMassage(
@@ -87,13 +70,14 @@ namespace CRM.Services
                 Theme = massageInformation.Theme
             });
         }
-        public override void OverdueRequest()
+        public override void OverdueRequest(ref bool sendMassageForOverdueRequest)
         {
             for (int i = 0; i < RequestsLoanUser.Count; i++)
             {
-                if (RequestsLoanUser[i].Payday >= DateTime.Now && RequestsLoanUser[i].StatusDuty == StatusUser.Accepted)
+                if (RequestsLoanUser[i].Payday >= DateTime.Now && RequestsLoanUser[i].StatusDuty == StatusLoan.Accepted)
                 {
                     int idx = Persons.FindIndex(x => x.Id == RequestsLoanUser[i].IdSender);
+                    sendMassageForOverdueRequest = true;
                     Massages.Add(new Massage
                     {
                         Id = Guid.NewGuid(),
