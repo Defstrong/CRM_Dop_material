@@ -11,7 +11,6 @@ namespace Models
         public string Theme { get; set; }
         public string Text { get; set; }
         public Roles Role { get; set; }
-
         public override string ToString() =>
             $"Name: {Name} Theme:{Theme}";
     }

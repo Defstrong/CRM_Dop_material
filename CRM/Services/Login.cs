@@ -6,24 +6,51 @@ namespace Services
 {
     public class Login
     {
-        public List<Person> Persons;
+        private readonly List<Person> Persons;
         public Login(List<Person> persons) {
             Persons = persons;
         }
-        public Guid LoginPerson(InputUserDto dtoLogin)
+        public Result<Person> LoginPerson(InputUserDto dtoLogin)
         {
-            int idx = Persons.FindIndex(x => x.Login.Equals(dtoLogin.Login) && x.Password.Equals(dtoLogin.Password));
-            if (Persons[idx].Status == StatusUser.Accepted && idx != -1)
-            {
-                dtoLogin.Role = Persons[idx].Role;
-            }
-            else if (Persons[idx].Status == StatusUser.Refuse)
-                throw new Exception(Persons[idx].CauseRefuseRegistration);
+            int idx = -1;
+            Result<Person> result = new Result<Person>();
+            if(string.IsNullOrEmpty(dtoLogin.Login))
+                result.TextError += "Text box Login is empty. Please fill in field Login\n";
+            if (string.IsNullOrEmpty(dtoLogin.Password))
+                result.TextError += "Text box Password is empty. Please fill in field Password\n";
+            else
+                idx = Persons.FindIndex(x => x.Login.Equals(dtoLogin.Login) && x.Password.Equals(dtoLogin.Password));
 
-            if (idx != -1)
-                return Persons[idx].Id;
-            else 
-                throw new Exception("Eror 404\nUser is not found");
+
+            if(idx != -1)
+            {
+                if (Persons[idx].Status == StatusUser.Accepted)
+                {
+                    dtoLogin.Role = Persons[idx].Role;
+                    result.Error = ErrorStatus.Success;
+                    result.TextError += "Login is successfully\n";
+                    result.Payload = Persons[idx];
+                    result.IsSuccessfully = true;
+                    return result;
+                }
+                else if(Persons[idx].Status == StatusUser.Block)
+                {
+                    result.Error = ErrorStatus.ServiceNotAvailable;
+                    result.TextError = "Sorry but Admin blocked you\n";
+                }
+                else if (Persons[idx].Status == StatusUser.Refuse)
+                {
+                    result.TextError += Persons[idx].CauseRefuseRegistration;
+                }
+                else
+                {
+                    result.Error = ErrorStatus.NotFound;
+                    result.TextError += "Person not found\n";
+                }
+            }
+
+            result.IsSuccessfully = false;
+            return result;
         }
     }
 }

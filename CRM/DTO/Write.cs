@@ -3,7 +3,7 @@ using Models;
 
 namespace DTO
 {
-    class Write
+    public sealed class Write
     {
         public void WriteDutys(string duty) =>
             Console.WriteLine(duty);
@@ -23,7 +23,9 @@ namespace DTO
             Console.Write("Enter your choice: ");
             Choice = Console.ReadLine();
             Console.Write("Enter user id: ");
-            Id = Guid.Parse(Console.ReadLine());
+            string str = Console.ReadLine();
+            if(!string.IsNullOrEmpty(str))
+                Id = Guid.Parse(str);
         }
         public void ChoiceCreator(ref string Name)
         {

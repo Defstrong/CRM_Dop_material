@@ -8,6 +8,6 @@ namespace AbstractClasses
         public static List<Person> PersonRegistration;
         public Registration(List<Person> persons) =>
             PersonRegistration = persons;
-        public virtual void RegistrationPerson(InputUserDto data) { }
+        public abstract Result<bool> RegistrationPerson(InputUserDto data);
     }
 }

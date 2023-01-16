@@ -7,7 +7,7 @@ namespace Models
         public string TextError { get; set; }
         public ErrorStatus Error { get; set; }
         public bool IsSuccessfully { get; set; }
-        public T ResultOperation { get; set; }
+        public T Payload { get; set; }
 
     }
 }

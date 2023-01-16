@@ -6,7 +6,7 @@ namespace Services
 {
     public sealed class AdminServices
     {
-        private static List<Person> Persons;
+        private readonly List<Person> Persons;
         public AdminServices(List<Person> persons, List<Loan> requestsLoanUser, List<Massage> massages)
         {
             Persons = persons;

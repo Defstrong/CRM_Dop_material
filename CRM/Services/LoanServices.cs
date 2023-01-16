@@ -1,23 +1,10 @@
 ﻿using DTO;
 using Enums;
 using Models;
+using AbstractClasses;
 
 namespace Services
 {
-    public abstract class LoanServices
-    {
-        public readonly List<Person> Persons;
-        public readonly List<Loan> RequestsLoanUser;
-        public LoanServices(List<Person> persons, List<Loan> requestsLoanUser)
-        {
-            Persons = persons;
-            RequestsLoanUser = requestsLoanUser;
-        }
-
-        public abstract void Loan(InputUserDto dtoLoan, int index);
-        public abstract void PayTheDebtOff(Guid id);
-    }
-
     class UserLoanServices : LoanServices
     {
         public UserLoanServices(List<Person> persons, List<Loan> requestsLoanUser) : base(persons, requestsLoanUser) {}
@@ -34,7 +21,7 @@ namespace Services
                 CountMoney = dtoLoan.AmountMoney,
                 StatusDuty = StatusLoan.Pending
             });
-        }
+        } 
 
         public override void PayTheDebtOff(Guid id)
         {

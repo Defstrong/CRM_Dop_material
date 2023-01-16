@@ -4,7 +4,7 @@ namespace Enums
     public enum ErrorStatus
     {
         Success,
-        Approved,
+        InvalidCommand,
         Failed,
         ArgumentNull,
         NotFound,

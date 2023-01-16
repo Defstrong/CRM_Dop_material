@@ -1,18 +1,18 @@
 ﻿using DTO;
-using Enums;
 using Models;
 
 namespace Services
 {
     public sealed class UserServices
     {
-        private static List<Person> Persons;
+        private readonly List<Person> Persons;
         public UserServices(List<Person> persons) =>
             Persons = persons;
 
         public void DeleteProfile(Guid id)
         {
             int idx = Persons.FindIndex(x => x.Id.Equals(id));
+
             Persons.Remove(Persons[idx]);
         }
 

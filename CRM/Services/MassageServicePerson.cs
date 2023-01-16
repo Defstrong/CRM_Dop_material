@@ -1,4 +1,5 @@
 ﻿using AbstractClasses;
+using CRM.DTO;
 using DTO;
 using Enums;
 using Models;
@@ -14,17 +15,69 @@ namespace Services
             base(massages, persons, loans)
         { }
 
-        public override void SendMassage(InputUserDto massageInformation)
+        public override Result<bool> SendMassage(DtoSendMassage massageInformation)
         {
-            Massages.Add(new Massage
+            Result<bool> result = new Result<bool>();
+            bool correctOrNot = true;
+            if(massageInformation.AdminOrManager != "Admin" && massageInformation.AdminOrManager != "Manager")
             {
-                Id = Guid.NewGuid(),
-                Name = massageInformation.FirstName,
-                Role = massageInformation.Role,
-                IdSender = massageInformation.Id,
-                Text = massageInformation.Text,
-                Theme = massageInformation.Theme
-            });
+                correctOrNot = false;
+
+                if (string.IsNullOrEmpty(massageInformation.AdminOrManager))
+                    result.TextError += "Text box AdminOrManager is empty. Please fill in the field AdminOrManager\n";
+                else
+                    result.TextError += "Invalid command in text box AdminOrManager\n";
+
+            }
+            else
+            {
+                if (massageInformation.AdminOrManager == "Admin")
+                    massageInformation.Role = Roles.Admin;
+                else
+                    massageInformation.Role = Roles.Manager;
+
+            }
+            if(string.IsNullOrEmpty(massageInformation.FirstName))
+            {
+                correctOrNot = false;
+                result.TextError += "Text box FirstName is empty. Please fill in the field FirstName\n";
+            }
+            if(string.IsNullOrEmpty(massageInformation.Text))
+            {
+                correctOrNot = false;
+                result.TextError += "Text box TextMassage is empty. Please fill in the field TextMassage\n";
+            }
+            if(string.IsNullOrEmpty(massageInformation.Theme))
+            {
+                correctOrNot = false;
+                result.TextError += "Text box ThemeMassage is empty. Please fill in the field ThemeMassage\n";
+            }
+
+            if(!correctOrNot)
+            {
+                result.Error = ErrorStatus.ArgumentNull;
+                result.IsSuccessfully = false;
+                result.Payload = false;
+            }
+            else
+            {
+                result.Error = ErrorStatus.Success;
+                result.Payload = true;
+                result.IsSuccessfully = true;
+                result.TextError = "Message sent successfully\n";
+
+                Massages.Add(new Massage
+                {
+                    Id = Guid.NewGuid(),
+                    Name = massageInformation.FirstName,
+                    Role = massageInformation.Role,
+                    IdSender = massageInformation.Id,
+                    Text = massageInformation.Text,
+                    Theme = massageInformation.Theme
+                });
+            }
+            return result;
+
         }
     }
 
@@ -36,20 +89,54 @@ namespace Services
             List<Loan> loans) :
             base(massages, persons, loans)
         { }
-        public override void SendMassage(InputUserDto massageInformation)
+        public override Result<bool> SendMassage(DtoSendMassage massageInformation)
         {
-            Massages.Add(new Massage
+            Result<bool> result = new Result<bool>();
+            Roles adminOrManager;
+            bool correctOrNot = true;
+            if (string.IsNullOrEmpty(massageInformation.Text))
             {
-                Id = Guid.NewGuid(),
-                Name = "Admin",
-                IdRecipient = massageInformation.Id,
-                Role = Roles.User,
-                Text = massageInformation.Text,
-                Theme = massageInformation.Theme
-            });
+                correctOrNot = false;
+                result.TextError += "Text box TextMassage is empty. Please fill in the field TextMassage\n";
+            }
+            if (string.IsNullOrEmpty(massageInformation.Theme))
+            {
+                correctOrNot = false;
+                result.TextError += "Text box ThemeMassage is empty. Please fill in the field ThemeMassage\n";
+            }
+            if(massageInformation.Id == Guid.Empty)
+            {
+                correctOrNot = false;
+                result.TextError += "Text box IdUser is empty. Please fill in the field IdUser\n";
+            }
+
+            if (!correctOrNot)
+            {
+                result.Error = ErrorStatus.ArgumentNull;
+                result.IsSuccessfully = false;
+                result.Payload = false;
+            }
+            else
+            {
+                result.Error = ErrorStatus.Success;
+                result.Payload = true;
+                result.IsSuccessfully = true;
+                result.TextError = "Message sent successfully\n";
+
+                Massages.Add(new Massage
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Admin",
+                    IdRecipient = massageInformation.Id,
+                    Role = Roles.User,
+                    Text = massageInformation.Text,
+                    Theme = massageInformation.Theme
+                });
+            }
+            return result;
+
         }
     }
-
     class ManagerMassage : MassageService
     {
         public ManagerMassage(
@@ -58,18 +145,54 @@ namespace Services
             List<Loan> loans) : 
             base(massages, persons, loans) { }
 
-        public override void SendMassage(InputUserDto massageInformation)
+        public override Result<bool> SendMassage(DtoSendMassage massageInformation)
         {
-            Massages.Add(new Massage
+            Result<bool> result = new Result<bool>();
+            bool correctOrNot = true;
+            if (string.IsNullOrEmpty(massageInformation.Text))
             {
-                Id = Guid.NewGuid(),
-                Name = "Manager",
-                IdRecipient = massageInformation.Id,
-                Role = Roles.User,
-                Text = massageInformation.Text,
-                Theme = massageInformation.Theme
-            });
+                correctOrNot = false;
+                result.TextError += "Text box TextMassage is empty. Please fill in the field TextMassage\n";
+            }
+            if (string.IsNullOrEmpty(massageInformation.Theme))
+            {
+                correctOrNot = false;
+                result.TextError += "Text box ThemeMassage is empty. Please fill in the field ThemeMassage\n";
+            }
+            if (massageInformation.Id == Guid.Empty)
+            {
+                correctOrNot = false;
+                result.TextError += "Text box IdUser is empty. Please fill in the field IdUser\n";
+            }
+
+
+            if (!correctOrNot)
+            {
+                result.Error = ErrorStatus.ArgumentNull;
+                result.IsSuccessfully = false;
+                result.Payload = false;
+            }
+            else
+            {
+                result.Error = ErrorStatus.Success;
+                result.Payload = true;
+                result.IsSuccessfully = true;
+                result.TextError = "Message sent successfully\n";
+
+                Massages.Add(new Massage
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Manager",
+                    IdRecipient = massageInformation.Id,
+                    Role = Roles.User,
+                    Text = massageInformation.Text,
+                    Theme = massageInformation.Theme
+                });
+            }
+            return result;
+
         }
+        
         public override void OverdueRequest(ref bool sendMassageForOverdueRequest)
         {
             for (int i = 0; i < RequestsLoanUser.Count; i++)
@@ -90,8 +213,6 @@ namespace Services
                     });
                 }
             }
-
         }
     }
-
 }

@@ -6,7 +6,7 @@ namespace Services
 {
     public sealed class ManagerServices
     {
-        static List<Loan> RequestsLoanUser;
+        private readonly List<Loan> RequestsLoanUser;
         public ManagerServices(List<Loan> requestsLoanUser)
         {
             RequestsLoanUser = requestsLoanUser;
