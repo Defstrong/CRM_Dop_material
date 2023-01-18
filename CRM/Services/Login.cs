@@ -27,6 +27,7 @@ namespace Services
                 if (Persons[idx].Status == StatusUser.Accepted)
                 {
                     dtoLogin.Role = Persons[idx].Role;
+                    dtoLogin.Id = Persons[idx].Id;
                     result.Error = ErrorStatus.Success;
                     result.TextError += "Login is successfully\n";
                     result.Payload = Persons[idx];

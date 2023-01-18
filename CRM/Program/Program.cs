@@ -3,12 +3,13 @@ using Models;
 using Services;
 using Enums;
 using AbstractClasses;
-using CRM.DTO;
 
 var _personsList = new List<Person>();
 var _personsLoanRequestsList = new List<Loan>();
+var _employeePrepaidExpenseRequests = new List<PrepaidExpense>();
+
 var _massages = new List<Massage>();
-var  _write = new Write();
+var _write = new Write();
 var _login = new Login(_personsList);
 var _registration = new UserRegistration(_personsList);
 var _createAdmin = new AdminRegistration(_personsList);
@@ -21,6 +22,7 @@ var _userServices = new UserServices(_personsList);
 var _adminServices = new AdminServices(_personsList, _personsLoanRequestsList, _massages);
 var _moderatorServices = new ModeratorServices(_personsList);
 var _managerServices = new ManagerServices(_personsLoanRequestsList);
+var _accountantServices = new AccountantServices(_personsList, _employeePrepaidExpenseRequests);
 var _allStatistic = new Statistic();
 
 var _managerMassage = new ManagerMassage(_massages, _personsList, _personsLoanRequestsList);
@@ -40,6 +42,18 @@ _personsList.Add(new Person
     Age = 20,
     Patronymic = "Bob",
     Login = "Bob",
+    Password = "1",
+    Role = Roles.User,
+    Status = StatusUser.Accepted,
+    Id = Guid.NewGuid()
+});
+_personsList.Add(new Person
+{
+    FirstName = "Li",
+    LastName = "Li",
+    Age = 20,
+    Patronymic = "Li",
+    Login = "Li",
     Password = "1",
     Role = Roles.User,
     Status = StatusUser.Accepted,
@@ -89,6 +103,7 @@ int i = 1;
 
 while(i++ < 100)
 {
+    PaymentDateArrivedOrNot();
     WriteCountStatusRequestRegistration(_allStatistic.countAcceptedRequestRegistration, "accepted");
     WriteCountStatusRequestRegistration(_allStatistic.countRefuseRequestRegistration, "refuse");
     dto = new InputUserDto();
@@ -98,7 +113,7 @@ while(i++ < 100)
         Registration();
     else if (inputCommand == "Login")
     {
-        Login(ref dto); Password(ref dto);
+        Login(ref dto); Password(ref dto); 
         var result = _login.LoginPerson(dto);
         Console.WriteLine(result.TextError);
         if(result.IsSuccessfully)
@@ -113,11 +128,111 @@ while(i++ < 100)
                 ModeratorAction(inputCommand);
             else if (dto.Role == Roles.Manager)
                 ManagerAction(inputCommand, idPerson);
+            else if(dto.Role == Roles.Employee)
+            {
+                int idx = _personsList.FindIndex(x => x.Id.Equals(dto.Id));
+                if (inputCommand == "Personal area")
+                    PersonalAreaEmployee(_personsList[idx]);
+                if(inputCommand == "Prepaid expense")
+                {
+                    PrepaidExpense(idx);
+                }
+                if (_personsList[idx].Responsibility == ResponsibilityPerson.Accountant)
+                {
+                    AccountantAction(inputCommand, _personsList[idx]);
+                }
+            }
         }
     }
     else if (inputCommand == "Create admin")
         CreateAdmin();
 }
+
+void PrepaidExpense(int idx)
+{
+    var askForAnAdvance = new PrepaidExpense()
+    {
+        Id = Guid.NewGuid(),
+        IdEmloyee = _personsList[idx].Id,
+        FirstName = _personsList[idx].FirstName,
+        LastName = _personsList[idx].LastName,
+        Patronymic = _personsList[idx].Patronymic,
+    };
+
+    Console.Write("Please enter reason for the advance: ");
+    askForAnAdvance.ReasonForTheAdvance = Console.ReadLine();
+    Console.Write("Please enter count months: ");
+    askForAnAdvance.CountMonths = int.Parse(Console.ReadLine());
+    _employeePrepaidExpenseRequests.Add(askForAnAdvance);
+}
+
+void AccountantAction(string commandAccountant, Person dataAccountant)
+{
+    if(commandAccountant == "Employee salary")
+        EmployeeSalary();
+    else if(commandAccountant == "Request for advance")
+    {
+        ShowAllIdRequestForAdvance();
+        Guid idRequestForAdvance = EnterId();
+        string choiceAccountant = Console.ReadLine();
+        _accountantServices.RequestForAdvance(idRequestForAdvance, choiceAccountant);
+    }
+
+}
+
+void PaymentDateArrivedOrNot()
+{
+    foreach(var ii in _personsList)
+    {
+        if(ii.Role == Roles.Employee)
+        {
+            DateTime date = ii.DataPassportEmployeeAndSalary.SalaryPaymentDate;
+
+            if (DateTime.Now >= date)
+            {
+                if(ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
+                    ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
+                else
+                    ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
+
+                ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
+            }
+        }
+    }
+}
+
+void ShowAllIdRequestForAdvance()
+{
+    foreach(var ii in _employeePrepaidExpenseRequests)
+    {
+        if (ii.Status == StatusRequestForAdvance.Pending)
+            Console.WriteLine($"Id: {ii.Id}\nFirs name: {ii.FirstName}" +
+                $" Last name: {ii.LastName} Pantronymic: {ii.Patronymic}" +
+                $"\nReason for the advance:{ii.ReasonForTheAdvance}");
+    }
+}
+
+void EmployeeSalary()
+{
+    ShowAllIdEmployee();
+
+    Guid idEmployee = EnterId();
+    int salaryEmployee = int.Parse(Console.ReadLine());
+    _accountantServices.EmployeeSalary(idEmployee, salaryEmployee);
+}
+
+void ShowAllIdEmployee()
+{
+    foreach(var ii in _personsList)
+        if(ii.Role == Roles.Employee)
+            Console.WriteLine(ii.Id);
+}
+
+void PersonalAreaEmployee(Person personalAreaEmployee)
+{
+    Console.WriteLine(personalAreaEmployee.DataPassportEmployeeAndSalary.ToString());
+}
+
 void UserAction(string commandUser, Guid userId)
 {
     int idx = FindIndex(userId);
@@ -147,6 +262,7 @@ void UserAction(string commandUser, Guid userId)
     else if (commandUser == "Debt off")
         PayTheDebtOff(userId);
 }
+
 void PersonalArea(int idx)
 {
     if (_personsList[idx].Status == StatusUser.Accepted)
@@ -181,6 +297,73 @@ void AdminAction(string commandAdmin, Guid adminId)
         CreateLoanForUser();
     else if (commandAdmin == "Pay off user debts")
         PayOffUserDebts();
+    else if (commandAdmin == "Сreate an employee")
+        UserToEmployee();
+    else if (commandAdmin == "Duplicate user")
+        DuplicatePerson();
+    else if (commandAdmin == "Duplicate loan")
+        DuplicateLoan();
+
+}
+
+void DuplicateLoan()
+{
+    ShowAllIdUserRequestLoan();
+
+    Guid idLoan = EnterId();
+}
+
+void DuplicatePerson()
+{
+    ShowAllPersonId();
+    Guid idPerson = EnterId();
+    Console.Write("Enter new login for person: ");
+    string newLoginForDuplicatePerson = Console.ReadLine();
+    Console.Write("Enter new password for person: ");
+    string newPasswordForDuplicatePerson = Console.ReadLine();
+    _adminServices.DuplicatePerson(idPerson, newLoginForDuplicatePerson, newPasswordForDuplicatePerson);
+}
+
+
+DtoDataPassportAndSallary EnterDataPassportAndSalary(ref DtoDataPassportAndSallary DataPassport)
+{
+    Console.Write("Enter First name: ");
+    DataPassport.FirstName = Console.ReadLine();
+    Console.Write("Enter Last name: ");
+    DataPassport.LastName = Console.ReadLine();
+    Console.Write("Enter Patronymic: ");
+    DataPassport.Patronymic = Console.ReadLine();
+    Console.Write("Enter Date of birth: ");
+    DataPassport.DateOfBirth = DateTime.Parse(Console.ReadLine());
+    Console.Write("Enter Place of residence: ");
+    DataPassport.PlaceOfResidence = Console.ReadLine();
+    Console.Write("Enter Marital status: ");
+    DataPassport.MaritalStatus = Console.ReadLine();
+    Console.Write("Enter Phone number: ");
+    DataPassport.PhoneNumber = Console.ReadLine();
+    Console.Write("Enter Salary: ");
+    DataPassport.Salary = int.Parse(Console.ReadLine());
+    return DataPassport;
+}
+
+
+void ShowAllIdUsersLoan()
+{
+    foreach (var ii in _personsLoanRequestsList)
+    {
+            Console.WriteLine(ii.Id);
+            _write.Status(ii.StatusDuty);
+            _write.WriteDutys(ii.ToString());
+    }
+}
+void UserToEmployee()
+{
+    var DataPassportEmployee = new DtoDataPassportAndSallary();
+    ShowAllUserId();
+    Guid idUser = EnterId();
+    Console.Write("Who do you want to turn the user into: ");
+    string ResponsibilityEmployee = Console.ReadLine();
+    _adminServices.UserToEmployee(EnterDataPassportAndSalary(ref DataPassportEmployee), idUser, ResponsibilityEmployee);
 }
 
 void PayOffUserDebts()
@@ -396,9 +579,6 @@ void StatusDuty(Guid userId)
         Console.WriteLine("\nYou don't have loan");
 }
 
-
-
-
 void MyMassages(MassageService showMassage, Guid idPerson)
 {
     ShowAllIdMassages(idPerson);
@@ -481,8 +661,6 @@ void EditProfile(Guid id)
 }
 //
 
-
-
 //Manager Methods
 void StatisticLoan()
 {
@@ -498,8 +676,6 @@ void ShowUsersLoan()
     }
 }
 //
-
-
 
 void ModeratorAction(string commandAdmin)
 {
@@ -541,8 +717,6 @@ void ShowAllUsersId(List<Person> personsId, StatusUser status)
 }
 //
 
-
-
 //Admin Methods
 Guid EnterId()
 {
@@ -566,9 +740,6 @@ void ShowUsers(StatusUser status)
             Console.WriteLine(ii.ToString());
     }
 }
-
-
-
 /////////////////
 
 void ShowAllUserId()

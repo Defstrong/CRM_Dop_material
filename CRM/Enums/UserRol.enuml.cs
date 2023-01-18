@@ -6,6 +6,7 @@
         User,
         Guest,
         Moderator,
-        Manager
+        Manager,
+        Employee
     }
 }

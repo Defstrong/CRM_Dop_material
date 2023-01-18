@@ -7,9 +7,12 @@ namespace Services
     public sealed class AdminServices
     {
         private readonly List<Person> Persons;
-        public AdminServices(List<Person> persons, List<Loan> requestsLoanUser, List<Massage> massages)
+        private readonly List<Loan> RequestsLoanUser;
+
+        public AdminServices(List<Person> persons, List<Loan> requestsLoanUser)
         {
             Persons = persons;
+            RequestsLoanUser = requestsLoanUser;
         }
 
         public void EditPerson(DtoEditUser dtoEditUser)
@@ -39,6 +42,38 @@ namespace Services
         {
             int idxPerson = Persons.FindIndex(x => x.Id.Equals(idPerson));
             Persons[idxPerson].Status = StatusUser.Block;
+        }
+
+        public void UserToEmployee(DtoDataPassportAndSallary dataPassportEmployee, Guid idUser, string employee)
+        {
+            int idxUser = Persons.FindIndex(x => x.Id.Equals(idUser));
+            Persons[idxUser].Role = Roles.Employee;
+            if (employee == "Accountant")
+            {
+                Persons[idxUser].Responsibility = ResponsibilityPerson.Accountant;
+                Persons[idxUser].DataPassportEmployeeAndSalary = dataPassportEmployee;
+                Persons[idxUser].DataPassportEmployeeAndSalary.SalaryPaymentDate = DateTime.Now;
+                Persons[idxUser].DataPassportEmployeeAndSalary.SalaryPaymentDate.AddMonths(1);
+                Persons[idxUser].DataPassportEmployeeAndSalary.SalaryReceived = false;
+            }
+        }
+
+        public void DuplicatePerson(Guid idPerson, string newLogin, string newPassword)
+        {
+            int idxPerson = Persons.FindIndex(x => x.Id== idPerson);
+            Person newDuplicatePerson = Persons[idxPerson];
+            newDuplicatePerson.Login = newLogin;
+            newDuplicatePerson.Password = newPassword;
+            newDuplicatePerson.Id = Guid.NewGuid();
+            Persons.Add(newDuplicatePerson);
+        }
+
+        public void DuplicateLoan(Guid idLoan)
+        {
+            int idxLoan = RequestsLoanUser.FindIndex(x => x.Id.Equals(idLoan));
+            var newLoan = RequestsLoanUser[idxLoan];
+            newLoan.Id = Guid.NewGuid();
+            RequestsLoanUser.Add(newLoan);
         }
     }
 }

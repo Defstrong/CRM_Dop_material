@@ -5,6 +5,7 @@ namespace Models
 {
     public sealed class Person
     {
+        public DtoDataPassportAndSallary DataPassportEmployeeAndSalary { get; set; }
         public Guid Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
@@ -16,6 +17,7 @@ namespace Models
         public Roles Role { get; set; }
         public string CauseRefuseRegistration { get; set; }
         public StatusUser Status { get; set; }
+        public ResponsibilityPerson Responsibility { get; set; }
         public Person(InputUserDto classInputUser, Roles role)
         {
             string date;

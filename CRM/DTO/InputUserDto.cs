@@ -2,7 +2,7 @@
 
 namespace DTO
 {
-    public sealed class InputUserDto
+    public class InputUserDto
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }
