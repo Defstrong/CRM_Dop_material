@@ -19,7 +19,7 @@ var _editUser = new DtoEditUser();
 
 
 var _userServices = new UserServices(_personsList);
-var _adminServices = new AdminServices(_personsList, _personsLoanRequestsList, _massages);
+var _adminServices = new AdminServices(_personsList, _personsLoanRequestsList);
 var _moderatorServices = new ModeratorServices(_personsList);
 var _managerServices = new ManagerServices(_personsLoanRequestsList);
 var _accountantServices = new AccountantServices(_personsList, _employeePrepaidExpenseRequests);
@@ -174,8 +174,15 @@ void AccountantAction(string commandAccountant, Person dataAccountant)
     {
         ShowAllIdRequestForAdvance();
         Guid idRequestForAdvance = EnterId();
-        string choiceAccountant = Console.ReadLine();
-        _accountantServices.RequestForAdvance(idRequestForAdvance, choiceAccountant);
+        StatusRequestForAdvance choiceAccountant;
+        helpStr = Console.ReadLine();
+        if (helpStr == "Accepted")
+            choiceAccountant = StatusRequestForAdvance.Accepted;
+        else
+            choiceAccountant = StatusRequestForAdvance.Refuse;
+
+        var result = _accountantServices.RequestForAdvance(idRequestForAdvance, choiceAccountant);
+        Console.WriteLine(result.TextError);
     }
 
 }
@@ -184,19 +191,15 @@ void PaymentDateArrivedOrNot()
 {
     foreach(var ii in _personsList)
     {
-        if(ii.Role == Roles.Employee)
+        if(ii.Role == Roles.Employee && DateTime.Now >= ii.DataPassportEmployeeAndSalary.SalaryPaymentDate)
         {
             DateTime date = ii.DataPassportEmployeeAndSalary.SalaryPaymentDate;
+            if(ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
+                ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
+            else
+                ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
 
-            if (DateTime.Now >= date)
-            {
-                if(ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
-                    ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
-                else
-                    ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
-
-                ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
-            }
+            ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
         }
     }
 }
@@ -218,7 +221,8 @@ void EmployeeSalary()
 
     Guid idEmployee = EnterId();
     int salaryEmployee = int.Parse(Console.ReadLine());
-    _accountantServices.EmployeeSalary(idEmployee, salaryEmployee);
+    var result = _accountantServices.EmployeeSalary(idEmployee, salaryEmployee);
+    Console.WriteLine(result.TextError);
 }
 
 void ShowAllIdEmployee()
@@ -308,9 +312,11 @@ void AdminAction(string commandAdmin, Guid adminId)
 
 void DuplicateLoan()
 {
-    ShowAllIdUserRequestLoan();
+    ShowAllIdUsersLoan();
 
     Guid idLoan = EnterId();
+
+    _adminServices.DuplicateLoan(idLoan);
 }
 
 void DuplicatePerson()
