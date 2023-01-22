@@ -20,7 +20,6 @@ namespace Models
         public ResponsibilityPerson Responsibility { get; set; }
         public Person(InputUserDto classInputUser, Roles role)
         {
-            string date;
             FirstName = classInputUser.FirstName;
             LastName = classInputUser.LastName;
             Patronymic = classInputUser.Patronymic;

@@ -1,5 +1,6 @@
 ﻿using DTO;
 using Models;
+using Enums;
 
 namespace Services
 {
@@ -9,28 +10,63 @@ namespace Services
         public UserServices(List<Person> persons) =>
             Persons = persons;
 
-        public void DeleteProfile(Guid id)
+        public Result<bool> DeleteProfile(Guid id)
         {
+            var resultDeleteProfile = new Result<bool>() { IsSuccessfully = false, Payload = false };
             int idx = Persons.FindIndex(x => x.Id.Equals(id));
-
-            Persons.Remove(Persons[idx]);
+            if(idx != -1)
+            {
+                resultDeleteProfile.Payload = true;
+                resultDeleteProfile.IsSuccessfully = true;
+                resultDeleteProfile.Error = ErrorStatus.Success;
+                resultDeleteProfile.TextError = "Delete profile completed successfully";
+                Persons.Remove(Persons[idx]);
+                return resultDeleteProfile;
+            }
+            resultDeleteProfile.Error = ErrorStatus.NotFound;
+            resultDeleteProfile.TextError = "Profile is not found";
+            return resultDeleteProfile;
+            
         }
 
-        public void EditProfile(DtoEditUser editUser)
+        public Result<bool> EditProfile(DtoEditUser dtoEditUser)
         {
-            int idx = Persons.FindIndex(x => x.Id.Equals(editUser.Id));
-            if (!string.IsNullOrEmpty(editUser.FirstName))
-                Persons[idx].FirstName = editUser.FirstName;
-            if (!string.IsNullOrEmpty(editUser.LastName))
-                Persons[idx].LastName = editUser.LastName;
-            if (!string.IsNullOrEmpty(editUser.Patronymic))
-                Persons[idx].Patronymic = editUser.Patronymic;
-            if (!string.IsNullOrEmpty(editUser.Age.ToString()))
-                Persons[idx].Age = editUser.Age;
-            if (!string.IsNullOrEmpty(editUser.Login))
-                Persons[idx].Login = editUser.Login;
-            if (!string.IsNullOrEmpty(editUser.Password))
-                Persons[idx].Password = editUser.Password;
+            var resultEditPerson = new Result<bool>();
+            int idxPerson = Persons.FindIndex(x => x.Id.Equals(dtoEditUser.Id));
+            if (idxPerson != -1)
+            {
+                resultEditPerson.TextError = "Edit person completed successfuly";
+                resultEditPerson.IsSuccessfully = true;
+                resultEditPerson.Error = ErrorStatus.Success;
+                resultEditPerson.Payload = true;
+
+                if (!string.IsNullOrEmpty(dtoEditUser.FirstName))
+                    Persons[idxPerson].FirstName = dtoEditUser.FirstName;
+                if (!string.IsNullOrEmpty(dtoEditUser.LastName))
+                    Persons[idxPerson].LastName = dtoEditUser.LastName;
+                if (!string.IsNullOrEmpty(dtoEditUser.Patronymic))
+                    Persons[idxPerson].Patronymic = dtoEditUser.Patronymic;
+                if (!string.IsNullOrEmpty(dtoEditUser.Age.ToString()))
+                    Persons[idxPerson].Age = dtoEditUser.Age;
+                if (!string.IsNullOrEmpty(dtoEditUser.Login))
+                    Persons[idxPerson].Login = dtoEditUser.Login;
+                if (!string.IsNullOrEmpty(dtoEditUser.Password))
+                    Persons[idxPerson].Password = dtoEditUser.Password;
+                return resultEditPerson;
+            }
+            resultEditPerson.TextError = "User is not found";
+            resultEditPerson.IsSuccessfully = false;
+            resultEditPerson.Error = ErrorStatus.NotFound;
+            resultEditPerson.Payload = false;
+            return resultEditPerson;
+        }
+
+        public Person PersonalArea(Guid idUser)
+        {
+            int idxUser = Persons.FindIndex(x => x.Id.Equals(idUser));
+            if(idxUser != -1)
+                return Persons[idxUser];
+            return null;
         }
     }
 }

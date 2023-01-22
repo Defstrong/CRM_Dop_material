@@ -11,11 +11,12 @@ namespace Services
             RequestsLoanUser = requestsLoanUser;
         }
 
-        public void ChoiceLoanRequest(int idxUserLoan, string choice)
+        public void ChoiceLoanRequest(Guid idTransaction, StatusLoan choice)
         {
-            if (choice == "Accepted")
+            int idxUserLoan = RequestsLoanUser.FindIndex(x => x.Id.Equals(idTransaction));
+            if (choice == StatusLoan.Accepted)
                 RequestsLoanUser[idxUserLoan].StatusDuty = StatusLoan.Accepted;
-            else if(choice == "Refuse")
+            else if(choice == StatusLoan.Refuse)
                 RequestsLoanUser[idxUserLoan].StatusDuty = StatusLoan.Refuse;
         }
     }

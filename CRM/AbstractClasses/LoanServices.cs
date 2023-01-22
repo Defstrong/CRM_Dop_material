@@ -13,8 +13,8 @@ namespace AbstractClasses
             RequestsLoanUser = requestsLoanUser;
         }
 
-        public abstract void Loan(InputUserDto dtoLoan, int index);
-        public abstract void PayTheDebtOff(Guid id);
+        public abstract Result<bool> Loan(InputUserDto dtoLoan, Guid idPerson);
+        public abstract Result<bool> PayTheDebtOff(Guid id);
     }
 
 }
