@@ -1,6 +1,5 @@
 ﻿using Enums;
 using Models;
-using System.Xml.XPath;
 
 namespace Services
 {
@@ -8,6 +7,7 @@ namespace Services
     {
         private readonly List<Person> Persons;
         private readonly List<PrepaidExpense> RequestsEmployeeForAdvance;
+        public long CompanyAccount { get; set; } = 100000000;
         public AccountantServices(List<Person> persons, List<PrepaidExpense> requestsEmployeeForAdvance)
         {
             Persons = persons;
@@ -44,6 +44,7 @@ namespace Services
             result.Payload = false;
             return result;
         }
+
         public Result<bool> RequestForAdvance(Guid idRequestForAdvance, StatusRequestForAdvance choiceAccountant)
         {
             var result = new Result<bool>();
@@ -69,10 +70,17 @@ namespace Services
             {
                 if (choiceAccountant == StatusRequestForAdvance.Accepted)
                 {
-                    Persons[idxEmployee].DataPassportEmployeeAndSalary.SalaryReceived = true;
+                    Person person = Persons[idxEmployee];
+                    int payEmployee = person.DataPassportEmployeeAndSalary.Salary *
+                        RequestsEmployeeForAdvance[idxRequestEmployee].CountMonths;
+
+                    person.DataPassportEmployeeAndSalary.SalaryReceived = true;
+                    person.BankAccount[0] += payEmployee;
+                    CompanyAccount -= payEmployee;
                     RequestsEmployeeForAdvance[idxRequestEmployee].Status = StatusRequestForAdvance.Accepted;
-                    Persons[idxEmployee].DataPassportEmployeeAndSalary.SalaryPaymentDate =
-                        Persons[idxEmployee].DataPassportEmployeeAndSalary.SalaryPaymentDate.AddMonths(
+
+                    person.DataPassportEmployeeAndSalary.SalaryPaymentDate =
+                        person.DataPassportEmployeeAndSalary.SalaryPaymentDate.AddMonths(
                         RequestsEmployeeForAdvance[idxRequestEmployee].CountMonths);
 
                 }
@@ -89,6 +97,38 @@ namespace Services
             result.IsSuccessfully = false;
             result.Payload = false;
             return result;
+        }
+
+        public void PaymentDateArrivedOrNot()
+        {
+            foreach (var ii in Persons)
+            {
+                if (ii.Role == Roles.Employee && DateTime.Now >= ii.DataPassportEmployeeAndSalary.SalaryPaymentDate)
+                {
+                    DateTime date = ii.DataPassportEmployeeAndSalary.SalaryPaymentDate;
+                    if (ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
+                    {
+                        ii.BankAccount[0] += ii.DataPassportEmployeeAndSalary.Salary;
+                        CompanyAccount -= ii.DataPassportEmployeeAndSalary.Salary;
+                        ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
+                    }
+                    else
+                        ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
+                    ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
+                }
+            }
+        }
+
+        public void PaySalaryEmployee(Guid idEmployee)
+        {
+            int idxEmployee = Persons.FindIndex(x => x.Id.Equals(idEmployee));
+            Person person = Persons[idxEmployee];
+            if (idxEmployee == -1)
+            {
+                person.BankAccount[0] += person.DataPassportEmployeeAndSalary.Salary;
+                CompanyAccount -= person.DataPassportEmployeeAndSalary.Salary;
+                person.DataPassportEmployeeAndSalary.SalaryReceived = true;
+            }
         }
     }
 }

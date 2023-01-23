@@ -102,7 +102,6 @@ int i = 1;
 
 while(i++ < 100)
 {
-    PaymentDateArrivedOrNot();
     if (!_sendMassageFromManagerForOverdueRequest)
         _managerMassage.OverdueRequest(ref _sendMassageFromManagerForOverdueRequest);
     WriteCountStatusRequestRegistration(_allStatistic.countAcceptedRequestRegistration, "accepted");
@@ -165,9 +164,9 @@ void PrepaidExpense(int idx)
 
 void AccountantAction(string commandAccountant, Person dataAccountant)
 {
-    if(commandAccountant == "Employee salary")
+    if (commandAccountant == "Employee salary")
         WriteConsole(EmployeeSalary());
-    else if(commandAccountant == "Request for advance")
+    else if (commandAccountant == "Request for advance")
     {
         ShowAllIdRequestForAdvance();
         Guid idRequestForAdvance = EnterId();
@@ -181,24 +180,34 @@ void AccountantAction(string commandAccountant, Person dataAccountant)
         var result = _accountantServices.RequestForAdvance(idRequestForAdvance, choiceAccountant);
         Console.WriteLine(result.TextError);
     }
+    else if (commandAccountant == "Pay salary employee")
+        PaySalaryEmployee();
 
 }
 
-void PaymentDateArrivedOrNot()
+void PaySalaryEmployee()
 {
-    foreach(var ii in _personsList)
+    WriteConsole("Who do you want to pay?");
+    foreach (var ii in _personsList)
     {
-        if(ii.Role == Roles.Employee && DateTime.Now >= ii.DataPassportEmployeeAndSalary.SalaryPaymentDate)
+        if (ii.Role == Roles.Employee && DateTime.Now >= ii.DataPassportEmployeeAndSalary.SalaryPaymentDate)
         {
             DateTime date = ii.DataPassportEmployeeAndSalary.SalaryPaymentDate;
-            if(ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
-                ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
-            else
-                ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
-
-            ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
+            WriteConsole(ii.Id.ToString());
+            if (ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
+                WriteConsole(PersonalAreaEmployee(ii));
         }
     }
+    string choiceAccountant = Console.ReadLine();
+    Guid idEmployee;
+    if (choiceAccountant == "All")
+        _accountantServices.PaymentDateArrivedOrNot();
+    else
+    {
+        idEmployee = Guid.Parse(choiceAccountant);
+        _accountantServices.PaySalaryEmployee(idEmployee);
+    }
+
 }
 
 void ShowAllIdRequestForAdvance()

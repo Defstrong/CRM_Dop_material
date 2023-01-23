@@ -16,6 +16,7 @@ namespace Models
         public string Password { get; set; }
         public Roles Role { get; set; }
         public string CauseRefuseRegistration { get; set; }
+        public List<long> BankAccount = new List<long>(20);
         public StatusUser Status { get; set; }
         public ResponsibilityPerson Responsibility { get; set; }
         public Person(InputUserDto classInputUser, Roles role)
