@@ -1,24 +1,12 @@
 ﻿using DTO;  
 using Enums;
+using System.Runtime;
 
 namespace Models
 {
     public sealed class Person
     {
-        public DtoDataPassportAndSallary DataPassportEmployeeAndSalary { get; set; }
-        public Guid Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Patronymic { get; set; }
-        public int Age { get; set; }
-        public DateTime DateOfBirth { get; set; }
-        public string Login { get; set; }
-        public string Password { get; set; }
-        public Roles Role { get; set; }
-        public string CauseRefuseRegistration { get; set; }
-        public List<long> BankAccount = new List<long>(20);
-        public StatusUser Status { get; set; }
-        public ResponsibilityPerson Responsibility { get; set; }
+        public long[] BankAccount = new long[20];
         public Person(InputUserDto classInputUser, Roles role)
         {
             FirstName = classInputUser.FirstName;
@@ -29,8 +17,24 @@ namespace Models
             Login = classInputUser.Login;
             Password = classInputUser.Password;
             Role = role;
+            BankAccount[0] = 1000;
         }
-        public Person() {}
+        public Person() {
+            BankAccount[0] = 1000;
+        }
+        public DtoDataPassportAndSallary DataPassportEmployeeAndSalary { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Patronymic { get; set; }
+        public int Age { get; set; }
+        public Guid Id { get; set; }
+        public DateTime DateOfBirth { get; set; }
+        public Roles Role { get; set; }
+        public string Login { get; set; }
+        public string Password { get; set; }
+        public string CauseRefuseRegistration { get; set; }
+        public StatusUser Status { get; set; }
+        public ResponsibilityPerson Responsibility { get; set; }
         public static int age(DateTime birthDate)
         {
             DateTime today = DateTime.Today;

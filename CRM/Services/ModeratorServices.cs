@@ -10,11 +10,11 @@ namespace Services
         {
             Persons = persons;
         }
-        public Result<bool> ChoiceRequest(Guid idUser, string choice)
+        public Result<bool> ChoiceRequest(Guid idUser, StatusUser choice)
         {
             int idx = Persons.FindIndex(x => x.Id.Equals(idUser));
             Result<bool> result;
-            if(choice != "Accepted" && choice != "Refuse")
+            if(choice != StatusUser.Accepted && choice != StatusUser.Refuse)
             {
                 result = new Result<bool> { IsSuccessfully = false, Payload = false };
                 if (idUser == Guid.Empty)
@@ -22,7 +22,7 @@ namespace Services
                 else if(idx == -1 && string.IsNullOrEmpty(idUser.ToString()) != false)
                     result.TextError += "\nUser is not found. Please try again";
 
-                if (string.IsNullOrEmpty(choice))
+                if (string.IsNullOrEmpty(choice.ToString()))
                 {
                     result.Error = ErrorStatus.ArgumentNull;
                     result.TextError += "\nText box Choice is empty. Please fill in the field Choice";
@@ -37,14 +37,14 @@ namespace Services
             else
             {
                 result = new Result<bool> { Error = ErrorStatus.Success, IsSuccessfully = true, Payload = true };
-                if (choice == "Accepted")
+                if (choice == StatusUser.Accepted)
                 {
-                    Persons[idx].Status = StatusUser.Accepted;
+                    Persons[idx].Status = choice;
                     result.TextError = "\nRequest successfully approved\n";
                 }
                 else
                 {
-                    Persons[idx].Status = StatusUser.Refuse;
+                    Persons[idx].Status = choice;
                     result.TextError = "\nRequest successfully denied\n";
                 }
             }

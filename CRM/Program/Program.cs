@@ -24,6 +24,7 @@ var _moderatorServices = new ModeratorServices(_personsList);
 var _managerServices = new ManagerServices(_personsLoanRequestsList);
 var _accountantServices = new AccountantServices(_personsList, _employeePrepaidExpenseRequests);
 var _allStatistic = new Statistic();
+var  _accountAction = new AccountServices(_personsList);
 
 var _managerMassage = new ManagerMassage(_massages, _personsList, _personsLoanRequestsList);
 var _userMassage = new UserMassage(_massages, _personsList, _personsLoanRequestsList);
@@ -121,7 +122,10 @@ while(i++ < 100)
             Guid idPerson = result.Payload.Id;
             Command(ref inputCommand);
             if (dto.Role == Roles.User)
+            {
+                int idxPerson = _personsList.FindIndex(x => x.Id == idPerson);
                 WriteConsole(UserAction(inputCommand, idPerson));
+            }
             else if (dto.Role == Roles.Admin)
                 WriteConsole(AdminAction(inputCommand, idPerson));
             else if (dto.Role == Roles.Moderator)
@@ -182,9 +186,39 @@ void AccountantAction(string commandAccountant, Person dataAccountant)
     }
     else if (commandAccountant == "Pay salary employee")
         PaySalaryEmployee();
+    else if (commandAccountant == "Withdraw from employee account")
+        WithdrawFromTheEmployeeAccount();
 
 }
 
+
+void WithdrawFromTheEmployeeAccount()
+{
+    ShowAllIdEmployee();
+    Guid idEmployee = EnterId();
+    Console.Write("Enter count money: ");
+    long countMoney = long.Parse(Console.ReadLine());
+    _accountAction.WithdrawFromTheEmployeeAccount(idEmployee, countMoney);
+
+    Console.WriteLine(_accountAction.CompanyAccount);
+}
+string AdminAction(string commandAdmin, Guid idAdmin) =>
+    commandAdmin switch
+    {
+        "Show user" => ShowUser(),
+        "Show users" => ShowUsers(StatusUser.Accepted),
+        "Send massage" => SendMassage(_adminMassage, idAdmin),
+        "My massages" => MyMassages(_adminMassage, idAdmin),
+        "Edit person" => EditPerson(idAdmin),
+        "Delete person" => DeletePerson(),
+        "Block person" => BlockPerson(),
+        "Create loan for user" => CreateLoanForUser(),
+        "Pay off user debts" => PayOffUserDebts(),
+        "Сreate an employee" => UserToEmployee(),
+        "Duplicate user" => DuplicatePerson(),
+        "Duplicate loan" => DuplicateLoan(),
+        _ => "Your command is wrong. Please enter correct command"
+    };
 void PaySalaryEmployee()
 {
     WriteConsole("Who do you want to pay?");
@@ -205,7 +239,7 @@ void PaySalaryEmployee()
     else
     {
         idEmployee = Guid.Parse(choiceAccountant);
-        _accountantServices.PaySalaryEmployee(idEmployee);
+        _accountAction.PayMoney(idEmployee);
     }
 
 }
@@ -254,8 +288,27 @@ string UserAction(string commandUser, Guid idUser) =>
         "Edit profile" => EditPerson(idUser),
         "Send massage" => SendMassage(_userMassage, idUser),
         "Debt off" => PayTheDebtOff(idUser),
+        "Money transfer" => MoneyTransfer(idUser),
         _ => "Your command is wrong. Please enter correct command"
     } ;
+
+
+string MoneyTransfer(Guid idUser)
+{
+    var moneyTransferData = new MoneyTransfer();
+    ShowAllPersonId();
+    int idxUser = _personsList.FindIndex(x => x.Id.Equals(idUser));
+    moneyTransferData.IdSender = idUser;
+    Console.Write("Enter Id receiver: ");
+    moneyTransferData.IdReceiver = Guid.Parse(Console.ReadLine());
+    Console.Write("Enter count money: ");
+    moneyTransferData.CountMoney = long.Parse(Console.ReadLine());
+    Console.Write("Enter number account: ");
+    moneyTransferData.AccountNumber = int.Parse(Console.ReadLine())-1;
+    var resultMoneyTransfer = _accountAction.MoneyTransfer(moneyTransferData);
+    return resultMoneyTransfer.TextError ;
+}
+
 
 string DeleteProfile(Guid idUser)
 {
@@ -287,23 +340,6 @@ string PersonalArea(Guid idPerson)
         return "User is not found";
 }
 
-string AdminAction(string commandAdmin, Guid idAdmin) =>
-    commandAdmin switch
-    {
-        "Show user" => ShowUser(),
-        "Show users" => ShowUsers(StatusUser.Accepted),
-        "Send massage" => SendMassage(_adminMassage, idAdmin),
-        "My massages" => MyMassages(_adminMassage, idAdmin),
-        "Edit person" => EditPerson(idAdmin),
-        "Delete person" => DeletePerson(),
-        "Block person" => BlockPerson(),
-        "Create loan for user" => CreateLoanForUser(),
-        "Pay off user debts" => PayOffUserDebts(),
-        "Сreate an employee" => UserToEmployee(),
-        "Duplicate user" => DuplicatePerson(),
-        "Duplicate loan" => DuplicateLoan(),
-        _ => "Your command is wrong. Please enter correct command"
-    };
 
 string ShowUser()
 {
@@ -506,17 +542,17 @@ string LoanRequestsManager()
     {
         ShowUsersIdTransaction();
         ShowUsersLoan();
-        string choice = string.Empty; Guid idTransaction = Guid.Empty;
-        _write.Choice(ref idTransaction, ref choice);
-        StatusLoan choiceManager;
-        if (choice == "Accepted")
-            choiceManager = StatusLoan.Accepted;
+        StatusLoan choice = StatusLoan.Pending; Guid idTransaction = Guid.Empty;
+        string enterChoice = string.Empty;
+        _write.Choice(ref idTransaction, ref enterChoice);
+        if (enterChoice == "Accepted")
+            choice = StatusLoan.Accepted;
         else
-            choiceManager = StatusLoan.Refuse;
-        _managerServices.ChoiceLoanRequest(idTransaction, choiceManager);
-        if (choice == "Accepted")
+            choice = StatusLoan.Refuse;
+        _managerServices.ChoiceLoanRequest(idTransaction, choice);
+        if (choice == StatusLoan.Accepted)
             _allStatistic.countAcceptedRequestLoan++;
-        else if (choice == "Refuse")
+        else if (choice == StatusLoan.Refuse)
             _allStatistic.countRefuseRequestLoan++;
         return "Action completed successfully";
     }
@@ -654,7 +690,6 @@ void ShowAllIdMassages(Guid id)
         }
 }
 
-
 string StatisticLoan()
 {
     string showStatisticLoan = string.Empty;
@@ -679,18 +714,22 @@ void ModeratorAction(string commandAdmin)
     {
         ShowAllUsersId(_personsList, StatusUser.Pending);
         ShowUsers(StatusUser.Pending);
-        string Choice = string.Empty; Guid Id = Guid.Empty;
-        _write.Choice(ref Id, ref Choice);
+        StatusUser Choice = StatusUser.Pending; Guid Id = Guid.Empty;
+        string enterChoice = string.Empty;
+        _write.Choice(ref Id, ref enterChoice);
         int idx = _personsList.FindIndex(x => x.Id.Equals(Id));
-
+        if (enterChoice == "Accepted")
+            Choice = StatusUser.Accepted;
+        else
+            Choice = StatusUser.Refuse;
         var result = _moderatorServices.ChoiceRequest(Id, Choice);
-        if (Choice == "Refuse")
+        if (Choice == StatusUser.Refuse)
         {
             _allStatistic.countRefuseRequestRegistration++;
             string textСauseRefusalOfRegistration = string.Empty;
             _personsList[idx].CauseRefuseRegistration = СauseRefusalOfRegistration(textСauseRefusalOfRegistration);
         }
-        else if (Choice == "Accepted")
+        else if (Choice == StatusUser.Accepted)
             _allStatistic.countAcceptedRequestRegistration++;
         Console.WriteLine(result.TextError);
     }

@@ -3,12 +3,13 @@ using Models;
 
 namespace Services
 {
-    public sealed class AccountantServices
-    {
+    public sealed class AccountantServices {
         private readonly List<Person> Persons;
         private readonly List<PrepaidExpense> RequestsEmployeeForAdvance;
+        private AccountServices AccountAction = new AccountServices();
         public long CompanyAccount { get; set; } = 100000000;
-        public AccountantServices(List<Person> persons, List<PrepaidExpense> requestsEmployeeForAdvance)
+        public AccountantServices(List<Person> persons, 
+            List<PrepaidExpense> requestsEmployeeForAdvance)
         {
             Persons = persons;
             RequestsEmployeeForAdvance = requestsEmployeeForAdvance;
@@ -54,8 +55,8 @@ namespace Services
                 result.TextError += "RequestsEmployee is not found";
                 result.Error = ErrorStatus.NotFound;
             }
-            int idxEmployee = Persons.FindIndex(x => x.Id.Equals(RequestsEmployeeForAdvance[idxRequestEmployee].IdEmloyee));
-            if(idxEmployee == -1)
+            var person = Persons.FirstOrDefault(x => x.Id.Equals(RequestsEmployeeForAdvance[idxRequestEmployee].IdEmloyee));
+            if(person is null)
             {
                 result.TextError += "Employee is not found";
                 result.Error = ErrorStatus.NotFound;
@@ -70,7 +71,6 @@ namespace Services
             {
                 if (choiceAccountant == StatusRequestForAdvance.Accepted)
                 {
-                    Person person = Persons[idxEmployee];
                     int payEmployee = person.DataPassportEmployeeAndSalary.Salary *
                         RequestsEmployeeForAdvance[idxRequestEmployee].CountMonths;
 
@@ -107,27 +107,12 @@ namespace Services
                 {
                     DateTime date = ii.DataPassportEmployeeAndSalary.SalaryPaymentDate;
                     if (ii.DataPassportEmployeeAndSalary.SalaryReceived == false)
-                    {
-                        ii.BankAccount[0] += ii.DataPassportEmployeeAndSalary.Salary;
-                        CompanyAccount -= ii.DataPassportEmployeeAndSalary.Salary;
-                        ii.DataPassportEmployeeAndSalary.SalaryReceived = true;
-                    }
+                        AccountAction.PayMoney(ii.Id);
                     else
                         ii.DataPassportEmployeeAndSalary.SalaryReceived = false;
+
                     ii.DataPassportEmployeeAndSalary.SalaryPaymentDate = date.AddMonths(1);
                 }
-            }
-        }
-
-        public void PaySalaryEmployee(Guid idEmployee)
-        {
-            int idxEmployee = Persons.FindIndex(x => x.Id.Equals(idEmployee));
-            Person person = Persons[idxEmployee];
-            if (idxEmployee == -1)
-            {
-                person.BankAccount[0] += person.DataPassportEmployeeAndSalary.Salary;
-                CompanyAccount -= person.DataPassportEmployeeAndSalary.Salary;
-                person.DataPassportEmployeeAndSalary.SalaryReceived = true;
             }
         }
     }
